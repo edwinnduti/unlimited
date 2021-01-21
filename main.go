@@ -2,13 +2,21 @@ package main
 
 import (
 	"io"
+	"os"
+	"fmt"
 	"log"
 	"net"
 )
 
 func main() {
 	// Listen on local port 80
-	listener, err := net.Listen("tcp", ":80")
+	// or Get port
+        Port := os.Getenv("PORT")
+	if Port == ""{
+		Port = "8080"
+	}
+	colonPort := fmt.Sprintf(":%s",Port)
+	listener, err := net.Listen("tcp", colonPort)
 	if err != nil {
 		log.Fatalln("Unable to bind to port")
 	}
