@@ -13,9 +13,11 @@ func main() {
 	// or Get port
         Port := os.Getenv("PORT")
 	if Port == ""{
-		Port = "8080"
+		Port = "80"
 	}
+
 	colonPort := fmt.Sprintf(":%s",Port)
+
 	listener, err := net.Listen("tcp", colonPort)
 	if err != nil {
 		log.Fatalln("Unable to bind to port")
