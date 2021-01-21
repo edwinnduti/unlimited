@@ -2,52 +2,51 @@ package main
 
 import (
 	"io"
-	"os"
-	"fmt"
 	"log"
 	"net"
 )
 
+var localServerHost = "localhost:8880"
+var remoteServerHost = "www.youtube.com:80"
+
 func main() {
-	// Listen on local port 80
-	// or Get port
-        Port := os.Getenv("PORT")
-	if Port == ""{
-		Port = "80"
-	}
 
-	colonPort := fmt.Sprintf(":%s",Port)
-
-	listener, err := net.Listen("tcp", colonPort)
+	ln, err := net.Listen("tcp", localServerHost)
 	if err != nil {
-		log.Fatalln("Unable to bind to port")
+		log.Fatal(err)
 	}
+
+	log.Println("Port forwarding server up and listening on ", localServerHost)
+
 	for {
-		conn, err := listener.Accept()
+		conn, err := ln.Accept()
 		if err != nil {
-			log.Fatalln("Unable to accept connection")
+			log.Fatal(err)
 		}
-		go handle(conn)
+
+		go handleConnection(conn)
 	}
 }
 
-func handle(src net.Conn) {
-	dst, err := net.Dial("tcp", "youtube.com:80")
+func forward(src, dest net.Conn) {
+	defer src.Close()
+	defer dest.Close()
+	io.Copy(src, dest)
+}
+
+func handleConnection(c net.Conn) {
+
+	log.Println("Connection from : ", c.RemoteAddr())
+
+	remote, err := net.Dial("tcp", remoteServerHost)
 	if err != nil {
-		log.Fatalln("Unable to connect to our unreachable host")
+		log.Fatal(err)
 	}
-	defer dst.Close()
 
-	// Run in goroutine to prevent io.Copy from blocking
-	go func() {
-		// Copy our source's output to the destination
-		if _, err := io.Copy(dst, src); err != nil {
-			log.Fatalln(err)
-		}
-	}()
+	log.Println("Connected to ", remoteServerHost)
 
-	// Copy our destination's output back to our source
-	if _, err := io.Copy(src, dst); err != nil {
-		log.Fatalln(err)
-	}
+	// go routines to initiate bi-directional communication for local server with a
+	// remote server
+	go forward(c, remote)
+	go forward(remote, c)
 }
