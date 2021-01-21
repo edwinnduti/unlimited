@@ -4,7 +4,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"net/http"
 )
 
 func main() {
